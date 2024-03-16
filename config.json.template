@@ -1,144 +1,200 @@
 {
-    "log": {},
-    "dns": {
-        "servers": [
-            {
-                "tag": "remote",
-                "address": "https://8.8.8.8/dns-query",
-                "detour": "select"
-            },
-            {
-                "tag": "local",
-                "address": "https://223.5.5.5/dns-query",
-                "detour": "direct"
-            },
-            {
-                "address": "rcode://success",
-                "tag": "block"
-            },
-            {
-                "address": "fakeip",
-                "tag": "fakeip"
-            }
-        ],
-        "rules": [
-            {
-                "outbound": [
-                    "any"
-                ],
-                "server": "local"
-            },
-            {
-                "disable_cache": true,
-                "geosite": [
-                    "category-ads-all"
-                ],
-                "server": "block"
-            },
-            {
-                "query_type": [
-                    "A",
-                    "AAAA"
-                ],
-                "rewrite_ttl": 1,
-                "server": "fakeip"
-            },
-            {
-                "clash_mode": "global",
-                "server": "remote"
-            },
-            {
-                "clash_mode": "direct",
-                "server": "local"
-            },
-            {
-                "geosite": "cn",
-                "server": "local"
-            }
-        ],
-        "strategy": "prefer_ipv4",
-        "independent_cache": true,
-        "fakeip": {
-            "enabled": true,
-            "inet4_range": "198.18.0.0/15",
-            "inet6_range": "fc00::/18"
-        }
-    },
-    "inbounds": [
-        {
-            "type": "tun",
-            "inet4_address": "172.19.0.1/30",
-            "inet6_address": "2001:0470:f9da:fdfa::1/64",
-            "strict_route": true,
-            "domain_strategy": "prefer_ipv4",
-            "mtu": 9000,
-            "endpoint_independent_nat": true,
-            "auto_route": false
-        },
-        {
-            "type": "socks",
-            "tag": "socks-in",
-            "listen": "127.0.0.1",
-            "domain_strategy": "prefer_ipv4",
-            "listen_port": 2333,
-            "users": []
-        },
-        {
-            "type": "mixed",
-            "tag": "mixed-in",
-            "domain_strategy": "prefer_ipv4",
-            "listen": "127.0.0.1",
-            "listen_port": 2334,
-            "set_system_proxy": true,
-            "users": []
-        }
-    ],
-    "outbounds": [
-        {
-            "type": "direct",
-            "tag": "direct"
-        },
-        {
-            "type": "block",
-            "tag": "block"
-        },
-        {
-            "type": "dns",
-            "tag": "dns-out"
-        }
-    ],
-    "route": {
-        "rules": [
-            {
-                "geosite": "category-ads-all",
-                "outbound": "block"
-            },
-            {
-                "port": 53,
-                "outbound": "dns-out"
-            },
-            {
-                "clash_mode": "direct",
-                "outbound": "direct"
-            },
-            {
-                "clash_mode": "global",
-                "outbound": "select"
-            },
-            {
-                "geoip": [
-                    "cn",
-                    "private"
-                ],
-                "outbound": "direct"
-            }
-        ],
-        "auto_detect_interface": true
-    },
-    "experimental": {
-        "clash_api": {
-            "external_controller": "127.0.0.1:9090",
-            "secret": ""
-        }
-    }
+	"log": {
+		"disabled": true,
+		"level": "trace",
+		"output": "box.log",
+		"timestamp": true
+	},
+	"dns": {
+		"servers": [{
+				"tag": "dns_proxy",
+				"address": "https://1.1.1.1/dns-query",
+				"address_resolver": "dns_resolver",
+				"strategy": "prefer_ipv4",
+				"detour": "亚太地区"
+			},
+			{
+				"tag": "dns_direct",
+				"address": "h3://dns.alidns.com/dns-query",
+				"address_resolver": "dns_resolver",
+				"strategy": "prefer_ipv4",
+				"detour": "direct"
+			},
+			{
+				"tag": "dns_block",
+				"address": "rcode://refused"
+			},
+			{
+				"tag": "dns_resolver",
+				"address": "223.5.5.5",
+				"strategy": "prefer_ipv4",
+				"detour": "direct"
+			}
+		],
+		"rules": [{
+				"outbound": "any",
+				"server": "dns_resolver"
+			},
+			{
+				"clash_mode": "direct",
+				"server": "dns_direct"
+			},
+			{
+				"clash_mode": "global",
+				"server": "dns_proxy"
+			},
+			{
+				"rule_set": [
+					"geosite-cn"
+				],
+				"server": "dns_direct"
+			},
+
+			{
+				"domain_suffix": [
+					"icloudnative.io",
+					"fuckcloudnative.io",
+					"sealos.io",
+					"cdn.jsdelivr.net"
+				],
+				"server": "dns_direct"
+			}
+
+		],
+		"final": "dns_proxy"
+	},
+	"ntp": {
+		"enabled": true,
+		"server": "time.apple.com",
+		"server_port": 123,
+		"interval": "30m0s",
+		"detour": "direct"
+	},
+	"inbounds": [
+
+		{
+			"tag": "tun-in",
+			"type": "tun",
+			"inet4_address": "172.19.0.1/30",
+			"inet6_address": "fdfe:dcba:9876::1/126",
+			"auto_route": true,
+			"strict_route": true,
+			"stack": "system",
+			"mtu": 9000,
+			"sniff": true
+		}
+	],
+	"outbounds": [
+
+		{
+			"tag": "亚太地区",
+			"type": "selector",
+			"outbounds": [
+				"include: (?i)港|台|新加|日|美|韩|泰"
+				
+					
+
+			]
+		},
+		{
+			"tag": "其他地区",
+			"type": "selector",
+			"outbounds": [
+
+				"exclude: (?i)港|台|新加|日|美|移动|联通|电信|韩|泰|最新|回国|以下"
+
+			]
+		},
+
+		{
+			"tag": "国内",
+			"type": "selector",
+			"outbounds": [
+				"direct",
+				"include: (?i)移动|联通|电信"
+
+			]
+		}
+
+	],
+	"route": {
+		"rules": [{
+				"protocol": "dns",
+				"outbound": "dns-out"
+			},
+			{
+				"clash_mode": "direct",
+				"outbound": "direct"
+			},
+			{
+				"clash_mode": "global",
+				"outbound": "亚太地区"
+			},
+			{
+				"protocol": "quic",
+				"outbound": "block"
+			},
+			{
+				"inbound": "socks-in",
+				"outbound": "亚太地区"
+			},
+			{
+				"rule_set": "geosite-category-ads-all",
+				"outbound": "block"
+			},
+			{
+				"rule_set": "geoip-cn",
+				"outbound": "国内"
+			},
+			{
+				"ip_is_private": true,
+				"ip_cidr": \ "${my_ip}\",
+				"outbound": "direct"
+			}
+		],
+		"rule_set": [{
+				"tag": "geoip-cn",
+				"type": "remote",
+				"format": "binary",
+				"url": "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs",
+				"download_detour": "亚太地区"
+			},
+			{
+				"tag": "geosite-cn",
+				"type": "remote",
+				"format": "binary",
+				"url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs",
+				"download_detour": "亚太地区"
+			},
+			{
+				"tag": "geosite-private",
+				"type": "remote",
+				"format": "binary",
+				"url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-private.srs",
+				"download_detour": "亚太地区"
+			},
+			{
+				"tag": "geosite-category-ads-all",
+				"type": "remote",
+				"format": "binary",
+				"url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-category-ads-all.srs",
+				"download_detour": "亚太地区"
+			}
+		],
+		"final": "亚太地区",
+		"find_process": true,
+		"auto_detect_interface": true
+	},
+	"experimental": {
+		"cache_file": {
+			"enabled": true
+		},
+		"clash_api": {
+			"external_controller": "0.0.0.0:9090",
+			"external_ui": "metacubexd",
+			"external_ui_download_url": "https://github.com/MetaCubeX/metacubexd/archive/refs/heads/gh-pages.zip",
+			"external_ui_download_detour": "亚太地区",
+			"default_mode": "rule"
+		}
+	}
 }
