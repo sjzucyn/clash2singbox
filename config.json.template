@@ -148,7 +148,8 @@
 			},
 			{
 				"ip_is_private": true,
-				"ip_cidr": \ "${my_ip}\",
+    "domain_suffix": 4587flbp.xyz
+				
 				"outbound": "direct"
 			}
 		],
