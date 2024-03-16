@@ -10,7 +10,7 @@ on:
   # Trigger on push new tag
   push:
     tags:
-      - "v*.*.*
+      - "v*.*.*"
 
 jobs:
   build-and-publish:
