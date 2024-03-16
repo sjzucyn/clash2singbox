@@ -148,7 +148,7 @@
 			},
 			{
 				"ip_is_private": true,
-    "domain_suffix": "4587flbp.xyz"
+    "domain_suffix": "4587flbp.xyz",
 				
 				"outbound": "direct"
 			}
